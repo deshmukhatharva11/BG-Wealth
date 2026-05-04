@@ -1,0 +1,142 @@
+services:
+  # NGINX Reverse Proxy (entry point)
+  nginx:
+    image: nginx:alpine
+    container_name: bgw-nginx
+    restart: always
+    ports:
+      - "127.0.0.1:8084:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - backend
+    networks:
+      - bgw-network
+
+  # Redis Cache (internal only — no public port)
+  redis:
+    image: redis:7-alpine
+    container_name: bgw-redis
+    restart: always
+    ports:
+      - "127.0.0.1:6383:6379"
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru --requirepass ${REDIS_PASSWORD:-changeme_redis}
+    volumes:
+      - redis_data:/data
+    networks:
+      - bgw-network
+    healthcheck:
+      test: [ "CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-changeme_redis}", "ping" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # Backend API
+  backend:
+    build: .
+    container_name: bgw-backend
+    restart: always
+    ports:
+      - "127.0.0.1:3004:3000"
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+      - DB_HOST=pgbouncer
+      - DB_NAME=${DB_NAME:-bg-wealth}
+      - DB_USER=${DB_USER:-postgres}
+      - DB_PASS=${DB_PASS}
+      - DB_PORT=5432
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-changeme_redis}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-2h}
+      - ADMIN_USERNAME=${ADMIN_USERNAME}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - BSC_RPC_URL=${BSC_RPC_URL:-https://bsc-dataseed1.binance.org/}
+      - BSC_RPC_URLS=${BSC_RPC_URLS}
+      - BSC_TESTNET_RPC_URL=${BSC_TESTNET_RPC_URL}
+      - BSC_CHAIN_ID=${BSC_CHAIN_ID:-56}
+      - USDT_TOKEN_ADDRESS=${USDT_TOKEN_ADDRESS:-0x55d398326f99059fF775485246999027B3197955}
+      - BALANCE_FETCHER_ADDRESS=${BALANCE_FETCHER_ADDRESS}
+      - MINE_CONTRACT_ADDRESS=${MINE_CONTRACT_ADDRESS}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - bgw-network
+
+  # PgBouncer Connection Pooler
+  pgbouncer:
+    image: edoburu/pgbouncer:latest
+    container_name: bgw-pgbouncer
+    restart: always
+    ports:
+      - "127.0.0.1:6436:5432"
+    environment:
+      - DATABASE_URL=postgres://${DB_USER:-postgres}:${DB_PASS}@postgres:5432/${DB_NAME:-bg-wealth}
+      - POOL_MODE=session
+      - MAX_CLIENT_CONN=200
+      - DEFAULT_POOL_SIZE=25
+      - AUTH_TYPE=scram-sha-256
+      - AUTH_USER=${DB_USER:-postgres}
+      - AUTH_QUERY=SELECT usename, passwd FROM pg_shadow WHERE usename=$1
+      - IGNORE_STARTUP_PARAMETERS=extra_float_digits,options,application_name
+      - VERBOSE=1
+      - REVERSE_DNS=0
+      - DB_USER=${DB_USER:-postgres}
+      - DB_PASSWORD=${DB_PASS}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - bgw-network
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: bgw-postgres
+    restart: always
+    ports:
+      - "127.0.0.1:5436:5432"
+    environment:
+      - POSTGRES_DB=${DB_NAME:-bg-wealth}
+      - POSTGRES_USER=${DB_USER:-postgres}
+      - POSTGRES_PASSWORD=${DB_PASS}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - bgw-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # PGAdmin (Database Management UI) — Dev only
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: bgw-pgadmin
+    restart: always
+    profiles: ["dev"]
+    ports:
+      - "127.0.0.1:5054:80"
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_EMAIL:-admin@bg-wealth.io}
+      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASSWORD:-changeme_pgadmin}
+    networks:
+      - bgw-network
+    depends_on:
+      - postgres
+
+networks:
+  bgw-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:

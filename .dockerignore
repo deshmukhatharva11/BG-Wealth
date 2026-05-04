@@ -1,0 +1,53 @@
+# Environment & Secrets — NEVER include in Docker image
+.env
+.env.local
+.env.production
+!.env.example
+
+# Version Control
+.git/
+.gitignore
+
+# Dependencies (rebuilt inside container)
+node_modules/
+
+# Build Artifacts
+cache/
+artifacts/
+dist/
+build/
+coverage/
+
+# IDE & Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+.zencoder/
+.zenflow/
+.gemini/
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Documentation (not needed in production image)
+*.md
+LICENSE
+
+# Docker files (prevent recursive copy)
+Dockerfile
+docker-compose.yml
+docker-compose*.yml
+
+# Test & Dev
+test/
+tests/
+__tests__/
+*.test.js
+*.spec.js
+
+# Logs
+logs/
+*.log
+npm-debug.log*

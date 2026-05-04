@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <title>BG Wealth Sharing LTD | Decentralized Wealth Ecosystem on BNB Chain</title>
+    <meta name="description"
+        content="BG Wealth Sharing LTD — A secure, transparent wealth-sharing ecosystem built on BNB Smart Chain. Enroll today and join the future of decentralized finance.">
+    <link rel="icon" type="image/jpeg" href="/BGWealth.jpg">
+    <link rel="stylesheet" href="/bg-wealth-styles.css?v=20260504a">
+    <script src="https://cdn.jsdelivr.net/npm/web3@4.2.0/dist/web3.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+    <style>
+        @media(max-width: 768px) {
+            .hero {
+                padding: 6.5rem 1rem 0 !important;
+            }
+
+            .hero-line1 {
+                font-size: 14vw !important;
+                letter-spacing: 3px !important;
+                margin-bottom: -2px !important;
+            }
+
+            .hero-line2 {
+                font-size: 17vw !important;
+                letter-spacing: 3px !important;
+            }
+
+            .glass-vault {
+                width: 75vw !important;
+                max-width: 380px !important;
+                margin: -2rem auto 0.5rem !important;
+            }
+
+            .hero-cta {
+                flex-direction: column !important;
+                width: 100% !important;
+                padding: 0 1rem !important;
+                margin-bottom: 2rem !important;
+                gap: 0.8rem !important;
+            }
+
+            .btn-primary,
+            .btn-outline {
+                width: 100% !important;
+                font-size: 0.95rem !important;
+                padding: 0.9rem !important;
+                border-radius: 12px !important;
+                min-height: 52px !important;
+                letter-spacing: 1px !important;
+            }
+
+            .nav-inner {
+                padding: 0 0.8rem !important;
+            }
+
+            .logo img {
+                width: 44px !important;
+                height: 44px !important;
+            }
+
+            .logo span {
+                font-size: 0.9rem !important;
+            }
+
+            .nav-btn {
+                min-height: 44px !important;
+                font-size: 0.8rem !important;
+                padding: 0.5rem 1rem !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="particles-bg"><canvas id="networkCanvas"></canvas></div>
+    <div id="floatingParticles" style="position:fixed;inset:0;z-index:0;pointer-events:none;"></div>
+
+    <!-- NAV -->
+    <nav>
+        <div class="nav-inner">
+            <a href="#home" class="logo"><img src="/BGWealth.jpg" alt="BGW"><span>BG-WEALTH</span></a>
+            <ul class="nav-links" id="navLinks">
+                <li><a href="#home">Home</a></li>
+                <li><a href="#about">About Us</a></li>
+                <li><a href="#roadmap">Roadmap</a></li>
+
+            </ul>
+            <div class="nav-right">
+                <a href="#" class="nav-icon" title="Twitter"><svg viewBox="0 0 24 24">
+                        <path
+                            d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                    </svg></a>
+                <a href="https://t.me/bgwealthsharingofficial1" target="_blank" class="nav-icon" title="Telegram"><svg
+                        viewBox="0 0 24 24">
+                        <path
+                            d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.211-1.446 1.394c-.14.18-.357.295-.6.295l.213-3.054 5.56-5.023c.24-.213-.054-.334-.373-.121l-6.871 4.326-2.962-.924c-.643-.204-.653-.643.136-.953l11.57-4.458c.538-.196 1.006.128.832.941z" />
+                    </svg></a>
+                <button class="nav-btn" id="connectWalletBtn">Register</button>
+            </div>
+            <div class="mob-toggle" id="mobileMenu"><span></span><span></span><span></span></div>
+        </div>
+    </nav>
+
+    <!-- HERO -->
+    <section class="hero" id="home">
+        <div class="hero-container">
+            <div class="hero-content">
+                <h1 class="hero-title-block">
+                    <span class="hero-line1">Institutional Grade</span>
+                    <span class="hero-line2">Wealth Sharing</span>
+                </h1>
+                <p class="hero-subtitle">
+                    BG Wealth Sharing LTD provides a secure, transparent, and fully automated wealth ecosystem powered
+                    by blockchain technology.
+                    Become part of a trusted community built for sustainable and long-term growth.
+                </p>
+                <div class="hero-cta">
+                    <button class="btn-primary" id="headingRegisterBtn">Enroll Now</button>
+                    <button class="btn-outline"
+                        onclick="document.getElementById('about').scrollIntoView({behavior:'smooth'})">Explore
+                        Platform</button>
+                </div>
+            </div>
+            <div class="hero-visual">
+                <canvas id="particleCanvas"></canvas>
+                <div class="glass-vault">
+                    <div class="vault-glow"></div>
+                    <img src="/BGWealth.jpg" alt="BG Wealth Sharing LTD" class="vault-logo">
+                </div>
+            </div>
+        </div>
+
+        <div class="marquee">
+            <div class="marquee-track">
+                <span>💰 BG WEALTH SHARING 💰 SECURE &amp; TRANSPARENT 💰 BNB SMART CHAIN 💰 DECENTRALIZED FINANCE 💰 BG
+                    WEALTH SHARING 💰 SECURE &amp; TRANSPARENT 💰 BNB SMART CHAIN 💰 DECENTRALIZED FINANCE</span>
+                <span>💰 BG WEALTH SHARING 💰 SECURE &amp; TRANSPARENT 💰 BNB SMART CHAIN 💰 DECENTRALIZED FINANCE 💰 BG
+                    WEALTH SHARING 💰 SECURE &amp; TRANSPARENT 💰 BNB SMART CHAIN 💰 DECENTRALIZED FINANCE</span>
+            </div>
+        </div>
+    </section>
+
+    <div class="features">
+        <div class="f-card reveal">
+            <div class="f-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round"
+                    style="filter: drop-shadow(0 0 10px rgba(212,175,55,0.6));">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                </svg>
+            </div>
+            <h3>Secure Smart Contracts</h3>
+            <p>Audited smart contracts on BNB Smart Chain ensure your assets remain safe. Every transaction is
+                transparent, verifiable, and immutable on the blockchain.</p>
+        </div>
+        <div class="f-card reveal">
+            <div class="f-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#E8C962" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round"
+                    style="filter: drop-shadow(0 0 10px rgba(232,201,98,0.6));">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="16"></line>
+                    <line x1="8" y1="12" x2="16" y2="12"></line>
+                </svg>
+            </div>
+            <h3>Wealth Sharing Model</h3>
+            <p>Our innovative wealth-sharing mechanism distributes rewards fairly across the community. The more the
+                ecosystem grows, the more every participant benefits.</p>
+        </div>
+        <div class="f-card reveal">
+            <div class="f-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round"
+                    style="filter: drop-shadow(0 0 10px rgba(212,175,55,0.6));">
+                    <line x1="18" y1="20" x2="18" y2="10"></line>
+                    <line x1="12" y1="20" x2="12" y2="4"></line>
+                    <line x1="6" y1="20" x2="6" y2="14"></line>
+                    <polyline points="2 12 6 8 12 14 22 4"></polyline>
+                </svg>
+            </div>
+            <h3>Sustainable Growth</h3>
+            <p>Built for long-term value with staking rewards, auto-burn mechanics, and a clear multi-phase roadmap from
+                DEX launch to a complete Web3 financial ecosystem.</p>
+        </div>
+    </div>
+
+    <!-- ABOUT -->
+    <section class="about" id="about">
+        <div class="about-grid">
+            <div class="reveal">
+                <p class="about-tag">About Us</p>
+                <h2>BG WEALTH SHARING LTD</h2>
+                <p>BG Wealth Sharing LTD is a registered company building a decentralized wealth-sharing ecosystem on
+                    the BNB Smart Chain. Our platform enables users to participate in a transparent, community-driven
+                    financial model — where every enrolled member benefits from the collective growth of the network.
+                </p>
+                <p>We leverage blockchain technology to eliminate intermediaries, reduce fees, and ensure that wealth
+                    distribution is fair, verifiable, and fully automated through smart contracts. Our mission is
+                    simple: <strong>empower individuals to build and share wealth together</strong>.</p>
+                <p>Whether you're new to crypto or an experienced DeFi participant, BG Wealth provides the tools,
+                    security, and community to help you grow your financial future on-chain.</p>
+                <button class="btn-primary" onclick="document.getElementById('headingRegisterBtn').click()"
+                    style="margin-top:.3rem">Get Started</button>
+            </div>
+            <div class="about-img reveal"><img src="/BGWealth.jpg" alt="BG Wealth Sharing LTD"></div>
+        </div>
+    </section>
+
+    <!-- ROADMAP -->
+    <section class="roadmap" id="roadmap">
+        <div class="sec-head">
+            <p class="sec-label">Roadmap</p>
+            <h2 class="sec-title">WEALTH ROADMAP</h2>
+            <div class="sec-bar"></div>
+        </div>
+        <div class="rm-grid">
+            <div class="rm-card reveal">
+                <div class="rm-q">Part 1</div>
+                <div class="rm-yr">FOUNDATION & CORE INFRASTRUCTURE</div>
+                <ul>
+                    <li>L2 migration (Layer 4 ➝ Layer 2)</li>
+                    <li>High-performance infrastructure setup</li>
+                    <li>Gas fee optimization & scalability boost</li>
+                    <li>Security audits & system stability</li>
+                </ul>
+            </div>
+            <div class="rm-card reveal">
+                <div class="rm-q">Part 2</div>
+                <div class="rm-yr">USER ECOSYSTEM DEVELOPMENT</div>
+                <ul>
+                    <li>Web3 wallet integration</li>
+                    <li>NFT marketplace launch</li>
+                    <li>Staking & reward systems</li>
+                    <li>Smooth onboarding (Web2 ➝ Web3)</li>
+                </ul>
+            </div>
+            <div class="rm-card reveal">
+                <div class="rm-q">Part 3</div>
+                <div class="rm-yr">TRADING & LIQUIDITY EXPANSION</div>
+                <ul>
+                    <li>Decentralized Exchange (DEX) launch</li>
+                    <li>Liquidity pools & farming</li>
+                    <li>Cross-chain swap functionality</li>
+                    <li>Advanced trading tools</li>
+                </ul>
+            </div>
+            <div class="rm-card reveal">
+                <div class="rm-q">Part 4</div>
+                <div class="rm-yr">FULL ECOSYSTEM & FUTURE VISION</div>
+                <ul>
+                    <li>Centralized Exchange (CEX) launch</li>
+                    <li>Native blockchain development</li>
+                    <li>DAO governance & AI integration</li>
+                    <li>Metaverse + complete Web3 ecosystem</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+
+    <!-- MODAL -->
+    <div class="modal-overlay" id="walletModal">
+        <div class="modal-box">
+            <div class="modal-head">
+                <h3>Register for BG-Wealth</h3><button class="close-modal" id="closeModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="modalMessage"></div>
+                <input type="text" id="referralCode" placeholder="Telegram ID"
+                    style="width:100%;padding:10px;background:rgba(212,175,55,.05);border:1px solid rgba(212,175,55,.12);color:#fff;border-radius:8px;font-family:var(--font);font-size:.85rem;text-align:center;outline:none;">
+                <div id="loader" style="display:none;text-align:center;">
+                    <div
+                        style="border:3px solid rgba(212,175,55,.1);border-left-color:var(--primary);border-radius:50%;width:26px;height:26px;animation:spin 1s linear infinite;margin:0 auto;">
+                    </div>
+                    <p style="margin-top:4px;color:var(--primary);font-size:.78rem;">Processing...</p>
+                </div>
+                <button class="connect-wallet-btn" id="registerBtn"><span id="registerText">Register</span></button>
+            </div>
+        </div>
+    </div>
+    <div class="success-popup-overlay" id="successPopup">
+        <div class="success-popup">
+            <div class="success-checkmark">✓</div>
+            <h3>Registration Successful!</h3>
+            <p class="success-subtitle" style="margin-bottom: 1rem;">Welcome to BG-Wealth</p>
+            <div class="success-address" id="successAddress" style="margin-bottom: 1.5rem;"></div>
+            <a href="https://t.me/bgwealthsharingofficial1" target="_blank" class="btn-primary"
+                style="display: inline-block; text-decoration: none; width: 100%; box-sizing: border-box;">
+                Join Official Telegram
+            </a>
+        </div>
+    </div>
+    <div class="fail-popup-overlay" id="failPopup">
+        <div class="fail-popup">
+            <div class="fail-cross">✗</div>
+            <h3>Registration Failed</h3>
+            <p class="fail-subtitle">Something went wrong</p>
+            <div class="fail-message" id="failMessage"></div><button class="fail-dismiss-btn"
+                id="failDismissBtn">Close</button>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer>
+        <div class="f-watermark">BG-WEALTH</div>
+        <div class="f-inner">
+            <div class="f-grid">
+                <div>
+                    <div class="f-brand"><img src="/BGWealth.jpg" alt="BG Wealth"><span>BG WEALTH SHARING</span></div>
+                    <p class="f-desc">BG Wealth Sharing LTD — A secure, community-driven wealth ecosystem built on BNB
+                        Smart Chain. Transparent smart contracts, fair distribution, real value.</p>
+                </div>
+                <div>
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="#home">Home</a></li>
+                        <li><a href="#about">About Us</a></li>
+                        <li><a href="#roadmap">Roadmap</a></li>
+
+                    </ul>
+                </div>
+                <div>
+                    <h4>Community</h4>
+                    <ul>
+                        <li><a href="https://t.me/bgwealthsharingofficial1" target="_blank">Telegram</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="f-bottom">
+                <p class="f-copy">&copy; 2026 BG Wealth Sharing LTD. All rights reserved.</p>
+
+            </div>
+        </div>
+    </footer>
+
+
+    <script src="/bg-wealth-app.js?v=20260504i"></script>
+    <script src="/particle-bg.js?v=20260504b"></script>
+</body>
+
+</html>
