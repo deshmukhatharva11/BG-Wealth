@@ -198,7 +198,7 @@ router.get('/config/contract-address', async (req, res) => {
         // Fetch active contract from Database (ApprovalAddress table)
         // User explicitly requested DB source
         const dbContract = await ApprovalAddress.findOne({
-            where: { chainId: bscChainId },
+            where: { chainId: bscChainId, isActive: true },
             order: [['createdAt', 'DESC']]
         });
 
