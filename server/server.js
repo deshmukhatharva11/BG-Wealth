@@ -19,6 +19,7 @@ const REQUIRED_ENV = ['JWT_SECRET', 'DB_PASS', 'ADMIN_USERNAME', 'ADMIN_PASSWORD
 if (process.env.NODE_ENV === 'production') {
     const missing = REQUIRED_ENV.filter(k => !process.env[k]);
     if (missing.length > 0) {
+        console.error("❌ CRASH ERROR: Missing required environment variables: " + missing.join(', '));
         process.exit(1);
     }
 }
@@ -280,6 +281,7 @@ const startServer = async () => {
         app.listen(PORT, () => {
         });
     } catch (error) {
+        console.error("❌ CRASH ERROR in startServer:", error);
         process.exit(1);
     }
 };

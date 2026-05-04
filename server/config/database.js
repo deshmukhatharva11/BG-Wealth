@@ -258,6 +258,7 @@ const connectDatabase = async () => {
         }
 
     } catch (error) {
+        console.error("❌ CRASH ERROR in connectDatabase:", error);
         process.exit(1); // Exit process with failure
     }
 };
